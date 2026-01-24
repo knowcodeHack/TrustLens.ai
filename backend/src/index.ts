@@ -5,6 +5,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import ingestRoutes from "./routes/ingest";
 import alertRoutes from "./routes/alerts";
+import { connectRedis } from "./redis";
 
 dotenv.config({ path: "../.env" });
 
@@ -23,6 +24,16 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/ingest", ingestRoutes);
 app.use("/api/alerts", alertRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Backend API running on port ${PORT}`);
-});
+const start = async () => {
+  try {
+    await connectRedis();
+  } catch (error) {
+    console.error("Failed to connect to Redis:", error);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Backend API running on port ${PORT}`);
+  });
+};
+
+start();
