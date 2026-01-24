@@ -115,10 +115,10 @@ export default function Home() {
               Join 100+ startups already using TrustLens to protect their infrastructure.
             </p>
             {session ? (
-              <Link href="/app/dashboard">
+              <Link href="/app/billing">
                 <Button size="lg" className="bg-white text-black hover:bg-zinc-200 group">
                   <LayoutDashboard className="w-4 h-4 mr-2" />
-                  Go to Dashboard
+                  View Billing
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
