@@ -39,9 +39,6 @@ export function Navbar() {
                 <Link href="/login">
                   <Button variant="ghost" className="text-zinc-400 hover:text-white">Login</Button>
                 </Link>
-                <Link href="/signup">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">Get Started</Button>
-                </Link>
               </div>
             )}
           </div>
@@ -78,9 +75,6 @@ export function Navbar() {
                   <>
                     <Link href="/login" onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full justify-center">Login</Button>
-                    </Link>
-                    <Link href="/signup" onClick={() => setIsOpen(false)}>
-                      <Button className="w-full justify-center bg-blue-600">Get Started</Button>
                     </Link>
                   </>
                 )}
