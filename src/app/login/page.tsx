@@ -61,7 +61,7 @@ export default function LoginPage() {
             <Button 
               variant="outline" 
               className="w-full border-white/10 hover:bg-white/5 gap-2"
-              onClick={() => signIn("google")}
+              onClick={() => signIn("google", { callbackUrl: "/app/dashboard" })}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path

@@ -1,16 +1,16 @@
 import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { supabase } from "./supabase";
 import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -28,8 +28,8 @@ export const authOptions: NextAuthOptions = {
         if (error || !user) return null;
 
         const isPasswordCorrect = await bcrypt.compare(
-          credentials.password,
-          user.password_hash
+          (credentials.password as string) || "",
+          (user as any).password_hash || ""
         );
 
         if (!isPasswordCorrect) return null;
@@ -45,12 +45,74 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // If signing in with Google, create/update user in Supabase
+      if (account?.provider === "google" && user.email) {
+        try {
+          // Check if user exists
+          const { data: existingUser, error: selectError } = await supabase
+            .from("users")
+            .select("id")
+            .eq("email", user.email)
+            .single();
+
+          if (selectError && selectError.code !== "PGRST116") {
+            console.error("Error checking user existence:", selectError);
+          }
+
+          if (!existingUser) {
+            // Create new user
+            const { error: insertError } = await supabase.from("users").insert([
+              {
+                email: user.email,
+                full_name: user.name || "",
+                role: "admin",
+                org_id: null,
+              },
+            ]);
+
+            if (insertError) {
+              console.error("Error creating user:", insertError);
+            } else {
+              console.log("User created successfully:", user.email);
+            }
+          } else {
+            console.log("User already exists:", user.email);
+          }
+        } catch (error) {
+          console.error("Error syncing Google user to Supabase:", error);
+          // Don't block sign-in on sync errors
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        token.org_id = (user as any).org_id;
-        token.role = (user as any).role;
+        token.email = user.email;
       }
+
+      // For Google sign-in, fetch user data from Supabase
+      if ((account?.provider === "google" || !token.id) && token.email) {
+        try {
+          const { data: supabaseUser, error } = await supabase
+            .from("users")
+            .select("id, role, org_id")
+            .eq("email", token.email)
+            .single();
+
+          if (supabaseUser) {
+            token.id = supabaseUser.id;
+            token.org_id = supabaseUser.org_id;
+            token.role = supabaseUser.role;
+          } else if (error) {
+            console.error("Error fetching user from Supabase:", error);
+          }
+        } catch (error) {
+          console.error("Error fetching user from Supabase:", error);
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -64,7 +126,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    signUp: "/signup",
   },
   session: {
     strategy: "jwt",
