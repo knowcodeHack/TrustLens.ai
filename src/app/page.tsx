@@ -1,16 +1,11 @@
-"use client";
-
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Zap, Lock, BarChart3, Cloud, Code, ArrowRight, LayoutDashboard } from "lucide-react";
+import { Shield, Zap, Lock, BarChart3, Cloud, Code, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
 export default function Home() {
-  const { data: session } = useSession();
-
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
       <Navbar />
@@ -31,21 +26,11 @@ export default function Home() {
               Detect anomalies, automate SOC2 readiness, and model threat behaviors with a single API call. Built for modern engineering teams.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              {session ? (
-                <Link href="/app/dashboard">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 group">
-                    <LayoutDashboard className="w-4 h-4 mr-2" />
-                    Go to Dashboard
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/signup">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8">
-                    Get Started for Free
-                  </Button>
-                </Link>
-              )}
+              <Link href="/signup">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8">
+                  Get Started for Free
+                </Button>
+              </Link>
               <Link href="/docs">
                 <Button size="lg" variant="outline" className="border-white/10 hover:bg-white/5 h-12 px-8">
                   View Documentation
@@ -114,22 +99,12 @@ export default function Home() {
             <p className="text-zinc-400 mb-10">
               Join 100+ startups already using TrustLens to protect their infrastructure.
             </p>
-            {session ? (
-              <Link href="/app/billing">
-                <Button size="lg" className="bg-white text-black hover:bg-zinc-200 group">
-                  <LayoutDashboard className="w-4 h-4 mr-2" />
-                  View Billing
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/signup">
-                <Button size="lg" className="bg-white text-black hover:bg-zinc-200 group">
-                  Start your 14-day free trial
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            )}
+            <Link href="/signup">
+              <Button size="lg" className="bg-white text-black hover:bg-zinc-200 group">
+                Start your 14-day free trial
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </section>
       </main>

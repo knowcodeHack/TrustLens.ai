@@ -29,15 +29,18 @@ export function Navbar() {
             <Link href="/docs" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Docs</Link>
             {session ? (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-zinc-400">
-                  {session.user?.email}
-                </span>
-                <Button variant="ghost" className="text-zinc-400 hover:text-white" onClick={() => signOut()}>Logout</Button>
+                <Link href="/app/dashboard">
+                  <Button variant="outline" className="border-white/10 hover:bg-white/5">Dashboard</Button>
+                </Link>
+                <Button variant="ghost" onClick={() => signOut()}>Logout</Button>
               </div>
             ) : (
               <div className="flex items-center gap-4">
                 <Link href="/login">
                   <Button variant="ghost" className="text-zinc-400 hover:text-white">Login</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">Get Started</Button>
                 </Link>
               </div>
             )}
@@ -66,18 +69,12 @@ export function Navbar() {
               <Link href="/pricing" className="block px-3 py-2 text-base font-medium text-zinc-400 hover:text-white" onClick={() => setIsOpen(false)}>Pricing</Link>
               <Link href="/docs" className="block px-3 py-2 text-base font-medium text-zinc-400 hover:text-white" onClick={() => setIsOpen(false)}>Docs</Link>
               <div className="pt-4 flex flex-col gap-2">
-                {session ? (
-                  <>
-                    <span className="text-sm text-zinc-400 text-center py-2">{session.user?.email}</span>
-                    <Button variant="outline" className="w-full justify-center" onClick={() => { signOut(); setIsOpen(false); }}>Logout</Button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full justify-center">Login</Button>
-                    </Link>
-                  </>
-                )}
+                <Link href="/login" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full justify-center">Login</Button>
+                </Link>
+                <Link href="/signup" onClick={() => setIsOpen(false)}>
+                  <Button className="w-full justify-center bg-blue-600">Get Started</Button>
+                </Link>
               </div>
             </div>
           </motion.div>
