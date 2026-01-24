@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   CreditCard, 
   Check, 
@@ -13,64 +12,8 @@ import {
   History,
   Download
 } from "lucide-react";
-import { useState } from "react";
-import Link from "next/link";
 
 export default function BillingPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPlan] = useState("Free"); // Mock current plan
-
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      description: "Perfect for early-stage startups",
-      features: [
-        "Up to 10k logs/day",
-        "7 days retention",
-        "Basic anomaly detection",
-        "Community support",
-        "1 integration"
-      ]
-    },
-    {
-      name: "Premium",
-      price: "$99",
-      description: "For growing SaaS companies",
-      features: [
-        "Unlimited logs",
-        "30 days retention",
-        "Advanced behavioral modeling",
-        "Priority 24/7 support",
-        "Unlimited integrations",
-        "SOC2 readiness dashboard"
-      ]
-    }
-  ];
-
-  const handleDownloadInvoice = (invoice: { date: string; amount: string; status: string }) => {
-    const invoiceContent = `
-TrustLens.ai Invoice
-====================
-
-Date: ${invoice.date}
-Amount: ${invoice.amount}
-Status: ${invoice.status}
-
-Thank you for your business!
-    `.trim();
-
-    const blob = new Blob([invoiceContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `invoice-${invoice.date.replace(/\s/g, '')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
@@ -89,7 +32,13 @@ Thank you for your business!
           </CardHeader>
           <CardContent className="space-y-4">
             <ul className="space-y-2">
-              {plans[1].features.map((f, i) => (
+              {[
+                "Unlimited log ingestion",
+                "30 days data retention",
+                "Advanced AI anomalies",
+                "SOC2 readiness dashboard",
+                "Priority support"
+              ].map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
                   <Check className="w-4 h-4 text-blue-500" />
                   {f}
@@ -98,7 +47,7 @@ Thank you for your business!
             </ul>
           </CardContent>
           <CardFooter className="border-t border-white/5 pt-6">
-            <Button variant="outline" className="w-full border-white/10 hover:bg-white/5" onClick={() => setIsModalOpen(true)}>Change Plan</Button>
+            <Button variant="outline" className="w-full border-white/10 hover:bg-white/5">Change Plan</Button>
           </CardFooter>
         </Card>
 
@@ -160,12 +109,7 @@ Thank you for your business!
                     <Badge className="bg-green-500/10 text-green-500 border-green-500/20">{inv.status}</Badge>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-blue-500"
-                      onClick={() => handleDownloadInvoice(inv)}
-                    >
+                    <Button variant="ghost" size="sm" className="text-blue-500">
                       <Download className="w-4 h-4 mr-2" />
                       PDF
                     </Button>
@@ -176,61 +120,6 @@ Thank you for your business!
           </table>
         </CardContent>
       </Card>
-
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogContent className="max-w-4xl bg-black border-white/10" showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Choose Your Plan</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Select the plan that best fits your needs.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {plans.map((plan, idx) => (
-            <Card key={idx} className={`bg-zinc-900 border-white/10 flex flex-col ${currentPlan === plan.name ? 'ring-2 ring-blue-500' : ''}`}>
-              {currentPlan === plan.name && (
-                <div className="absolute top-0 right-0 p-4">
-                  <Badge className="bg-blue-600 text-white border-none">Current Plan</Badge>
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.price} / month</CardDescription>
-                <p className="text-sm text-zinc-400 mt-2">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <ul className="space-y-2">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                      <Check className="w-4 h-4 text-blue-500" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="border-t border-white/5 pt-6">
-                {currentPlan !== plan.name && plan.name === "Premium" && (
-                  <Button variant="default" className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => setIsModalOpen(false)}>
-                    Upgrade to {plan.name}
-                  </Button>
-                )}
-                {currentPlan === plan.name && (
-                  <Button variant="outline" className="w-full border-white/10 hover:bg-white/5" disabled>
-                    Current Plan
-                  </Button>
-                )}
-                {currentPlan !== plan.name && plan.name === "Free" && (
-                  <Button variant="outline" className="w-full border-white/10 hover:bg-white/5" onClick={() => setIsModalOpen(false)}>
-                    Downgrade to {plan.name}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
     </div>
   );
 }
