@@ -26,17 +26,17 @@ export function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-2">
-              <li><Link href="/about" className="text-sm text-zinc-500 hover:text-white transition-colors">About</Link></li>
-              <li><Link href="/blog" className="text-sm text-zinc-500 hover:text-white transition-colors">Blog</Link></li>
-              <li><Link href="/careers" className="text-sm text-zinc-500 hover:text-white transition-colors">Careers</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">About</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">Blog</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">Careers</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li><Link href="/privacy" className="text-sm text-zinc-500 hover:text-white transition-colors">Privacy</Link></li>
-              <li><Link href="/terms" className="text-sm text-zinc-500 hover:text-white transition-colors">Terms</Link></li>
-              <li><Link href="/cookies" className="text-sm text-zinc-500 hover:text-white transition-colors">Cookie Policy</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">Terms</Link></li>
+              <li><Link href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">Cookie Policy</Link></li>
             </ul>
           </div>
         </div>
