@@ -40,7 +40,10 @@ export const authOptions: NextAuthOptions = {
           name: user.full_name,
           org_id: user.org_id,
           role: user.role,
-        };
+          is_premium: user.is_premium,
+          premium_since: user.premium_since,
+          premium_until: user.premium_until,
+        } as any;
       },
     }),
   ],
@@ -92,12 +95,12 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
       }
 
-      // For Google sign-in, fetch user data from Supabase
-      if ((account?.provider === "google" || !token.id) && token.email) {
+      // Keep user profile (including premium flags) in sync with Supabase
+      if (token.email) {
         try {
           const { data: supabaseUser, error } = await supabase
             .from("users")
-            .select("id, role, org_id")
+            .select("id, role, org_id, is_premium, premium_since, premium_until")
             .eq("email", token.email)
             .single();
 
@@ -105,6 +108,9 @@ export const authOptions: NextAuthOptions = {
             token.id = supabaseUser.id;
             token.org_id = supabaseUser.org_id;
             token.role = supabaseUser.role;
+            (token as any).is_premium = supabaseUser.is_premium;
+            (token as any).premium_since = supabaseUser.premium_since;
+            (token as any).premium_until = supabaseUser.premium_until;
           } else if (error) {
             console.error("Error fetching user from Supabase:", error);
           }
@@ -120,6 +126,9 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).org_id = token.org_id;
         (session.user as any).role = token.role;
+        (session.user as any).is_premium = (token as any).is_premium;
+        (session.user as any).premium_since = (token as any).premium_since;
+        (session.user as any).premium_until = (token as any).premium_until;
       }
       return session;
     },

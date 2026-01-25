@@ -25,6 +25,7 @@ export function AppNavbar() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const isPremium = Boolean((session?.user as any)?.is_premium);
 
   // Handle search
   const handleSearch = async (query: string) => {
@@ -137,6 +138,7 @@ export function AppNavbar() {
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-white">{session?.user?.name}</p>
             <p className="text-xs text-zinc-500">{session?.user?.email}</p>
+            {isPremium && <p className="text-[10px] text-blue-400 font-semibold">Premium</p>}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
