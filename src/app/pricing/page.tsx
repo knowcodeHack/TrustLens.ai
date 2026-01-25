@@ -21,7 +21,7 @@ declare global {
 const plans = [
   {
     name: "Free",
-    price: "$0",
+    price: "₹0",
     description: "Perfect for early-stage startups",
     features: [
       "Up to 10k logs/day",
@@ -36,7 +36,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "$99",
+    price: "₹99",
     description: "For growing SaaS companies",
     features: [
       "Unlimited logs",
