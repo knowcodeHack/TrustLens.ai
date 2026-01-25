@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ import {
   X,
   Check,
   FileJson,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Loader2
 } from "lucide-react";
 import {
   Drawer,
@@ -42,22 +43,23 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useSession } from "next-auth/react";
 
-const allLogs = [
-  { id: "1", type: "LOGIN_SUCCESS", user: "user_123", ip: "1.2.3.4", location: "US", timestamp: "2024-03-20 10:00:00", severity: "info" },
-  { id: "2", type: "DATA_EXPORT", user: "admin_01", ip: "5.6.7.8", location: "UK", timestamp: "2024-03-20 10:15:00", severity: "warn" },
-  { id: "3", type: "PASSWORD_CHANGE", user: "user_456", ip: "9.10.11.12", location: "FR", timestamp: "2024-03-20 10:30:00", severity: "info" },
-  { id: "4", type: "UNAUTHORIZED_ACCESS", user: "unknown", ip: "13.14.15.16", location: "CN", timestamp: "2024-03-20 10:45:00", severity: "error" },
-  { id: "5", type: "API_KEY_CREATED", user: "admin_01", ip: "5.6.7.8", location: "UK", timestamp: "2024-03-20 11:00:00", severity: "info" },
-  { id: "6", type: "LOGIN_FAILED", user: "user_789", ip: "20.21.22.23", location: "IN", timestamp: "2024-03-20 11:15:00", severity: "error" },
-  { id: "7", type: "PERMISSION_GRANTED", user: "admin_02", ip: "30.31.32.33", location: "DE", timestamp: "2024-03-20 11:30:00", severity: "info" },
-  { id: "8", type: "FILE_DOWNLOAD", user: "user_123", ip: "1.2.3.4", location: "US", timestamp: "2024-03-20 11:45:00", severity: "warn" },
-  { id: "9", type: "SESSION_EXPIRED", user: "user_456", ip: "9.10.11.12", location: "FR", timestamp: "2024-03-20 12:00:00", severity: "info" },
-  { id: "10", type: "MFA_ENABLED", user: "user_123", ip: "1.2.3.4", location: "US", timestamp: "2024-03-20 12:15:00", severity: "info" },
-];
+interface Log {
+  id: string;
+  event_type: string;
+  user_id: string | null;
+  ip: string | null;
+  location: string | null;
+  timestamp: string;
+  severity: string | null;
+  resource: string | null;
+  metadata: any;
+  anomaly_score: number | null;
+}
 
-const eventTypes = ["LOGIN_SUCCESS", "LOGIN_FAILED", "DATA_EXPORT", "PASSWORD_CHANGE", "UNAUTHORIZED_ACCESS", "API_KEY_CREATED", "PERMISSION_GRANTED", "FILE_DOWNLOAD", "SESSION_EXPIRED", "MFA_ENABLED"];
-const severityOptions = ["info", "warn", "error"];
+const severityOptions = ["info", "warn", "error", "low", "medium", "high"];
 const timeRangeOptions = [
   { label: "Last 1 Hour", value: "1h" },
   { label: "Last 24 Hours", value: "24h" },
@@ -67,35 +69,113 @@ const timeRangeOptions = [
 ];
 
 export default function LogsExplorerPage() {
-  const [selectedLog, setSelectedLog] = useState<typeof allLogs[0] | null>(null);
+  const { data: session } = useSession();
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState("24h");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [userOrgId, setUserOrgId] = useState<string | null>(null);
+
+  // Fetch user's org_id from session
+  useEffect(() => {
+    if (session?.user) {
+      const orgId = (session.user as any).org_id;
+      setUserOrgId(orgId);
+    }
+  }, [session]);
+
+  // Fetch logs from Supabase
+  useEffect(() => {
+    async function fetchLogs() {
+      // Wait for user org_id to be available
+      if (!userOrgId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        let query = supabase
+          .from('logs')
+          .select('*')
+          .eq('org_id', userOrgId) // Filter by organization
+          .order('timestamp', { ascending: false });
+
+        // Apply time range filter
+        if (timeRange !== 'all') {
+          const now = new Date();
+          let startDate = new Date();
+          
+          switch (timeRange) {
+            case '1h':
+              startDate.setHours(now.getHours() - 1);
+              break;
+            case '24h':
+              startDate.setHours(now.getHours() - 24);
+              break;
+            case '7d':
+              startDate.setDate(now.getDate() - 7);
+              break;
+            case '30d':
+              startDate.setDate(now.getDate() - 30);
+              break;
+          }
+          
+          query = query.gte('timestamp', startDate.toISOString());
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching logs:', error);
+          toast.error('Failed to fetch logs');
+          return;
+        }
+
+        setLogs(data || []);
+        
+        // Extract unique event types
+        const uniqueEventTypes = Array.from(new Set(data?.map(log => log.event_type) || []));
+        setEventTypes(uniqueEventTypes);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to fetch logs');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLogs();
+  }, [timeRange, userOrgId]); // Re-fetch when time range or org_id changes
 
   // Filter logs based on search and filters
   const filteredLogs = useMemo(() => {
-    return allLogs.filter(log => {
+    return logs.filter(log => {
       // Search filter
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = searchQuery === "" || 
-        log.type.toLowerCase().includes(searchLower) ||
-        log.user.toLowerCase().includes(searchLower) ||
-        log.ip.includes(searchQuery) ||
-        log.location.toLowerCase().includes(searchLower);
+        log.event_type?.toLowerCase().includes(searchLower) ||
+        log.user_id?.toLowerCase().includes(searchLower) ||
+        log.ip?.includes(searchQuery) ||
+        log.location?.toLowerCase().includes(searchLower);
 
       // Severity filter
       const matchesSeverity = selectedSeverities.length === 0 || 
-        selectedSeverities.includes(log.severity);
+        (log.severity && selectedSeverities.includes(log.severity));
 
       // Event type filter
       const matchesEventType = selectedEventTypes.length === 0 || 
-        selectedEventTypes.includes(log.type);
+        selectedEventTypes.includes(log.event_type);
 
       return matchesSearch && matchesSeverity && matchesEventType;
     });
-  }, [searchQuery, selectedSeverities, selectedEventTypes]);
+  }, [logs, searchQuery, selectedSeverities, selectedEventTypes]);
 
   const activeFilterCount = selectedSeverities.length + selectedEventTypes.length;
 
@@ -125,12 +205,14 @@ export default function LogsExplorerPage() {
   const exportLogs = (format: "json" | "csv") => {
     const logsToExport = filteredLogs.map(log => ({
       id: log.id,
-      eventType: log.type,
-      userId: log.user,
+      eventType: log.event_type,
+      userId: log.user_id,
       ip: log.ip,
       location: log.location,
       timestamp: log.timestamp,
       severity: log.severity,
+      resource: log.resource,
+      anomalyScore: log.anomaly_score,
     }));
 
     let content: string;
@@ -143,15 +225,17 @@ export default function LogsExplorerPage() {
       mimeType = "application/json";
     } else {
       // CSV format
-      const headers = ["ID", "Event Type", "User ID", "IP Address", "Location", "Timestamp", "Severity"];
+      const headers = ["ID", "Event Type", "User ID", "IP Address", "Location", "Timestamp", "Severity", "Resource", "Anomaly Score"];
       const rows = logsToExport.map(log => [
         log.id,
         log.eventType,
-        log.userId,
-        log.ip,
-        log.location,
+        log.userId || '',
+        log.ip || '',
+        log.location || '',
         log.timestamp,
-        log.severity
+        log.severity || '',
+        log.resource || '',
+        log.anomalyScore || '0'
       ]);
       content = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
       filename = `trustlens-logs-${new Date().toISOString().split('T')[0]}.csv`;
@@ -185,7 +269,7 @@ export default function LogsExplorerPage() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="border-white/10 hover:bg-white/5">
+            <Button variant="outline" className="border-white/10 hover:bg-white/5" disabled={loading}>
               <Download className="w-4 h-4 mr-2" />
               Export Logs
             </Button>
@@ -390,7 +474,16 @@ export default function LogsExplorerPage() {
           {/* Results count */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-zinc-500">
-              Showing <span className="text-white font-medium">{filteredLogs.length}</span> of {allLogs.length} logs
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading logs...
+                </span>
+              ) : (
+                <>
+                  Showing <span className="text-white font-medium">{filteredLogs.length}</span> of {logs.length} logs
+                </>
+              )}
             </p>
           </div>
 
@@ -406,7 +499,29 @@ export default function LogsExplorerPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredLogs.length === 0 ? (
+                {!session ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+                      <p className="text-zinc-500 mt-2">Authenticating...</p>
+                    </td>
+                  </tr>
+                ) : !userOrgId ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <Info className="w-12 h-12 mx-auto text-zinc-600 mb-2" />
+                      <p className="text-zinc-500">No organization found</p>
+                      <p className="text-zinc-600 text-sm mt-1">Please contact your administrator</p>
+                    </td>
+                  </tr>
+                ) : loading ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+                      <p className="text-zinc-500 mt-2">Loading logs...</p>
+                    </td>
+                  </tr>
+                ) : filteredLogs.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center">
                       <p className="text-zinc-500">No logs match your filters</p>
@@ -427,17 +542,21 @@ export default function LogsExplorerPage() {
                           className="group hover:bg-white/[0.02] cursor-pointer transition-colors"
                           onClick={() => setSelectedLog(log)}
                         >
-                          <td className="py-4 px-4 text-sm text-zinc-400 font-mono">{log.timestamp}</td>
-                          <td className="py-4 px-4 text-sm font-medium text-white">{log.type}</td>
-                          <td className="py-4 px-4 text-sm text-zinc-400">{log.user}</td>
-                          <td className="py-4 px-4 text-sm text-zinc-400 font-mono">{log.ip} <span className="text-[10px] text-zinc-600 ml-1">({log.location})</span></td>
+                          <td className="py-4 px-4 text-sm text-zinc-400 font-mono">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </td>
+                          <td className="py-4 px-4 text-sm font-medium text-white">{log.event_type}</td>
+                          <td className="py-4 px-4 text-sm text-zinc-400">{log.user_id || 'N/A'}</td>
+                          <td className="py-4 px-4 text-sm text-zinc-400 font-mono">
+                            {log.ip || 'N/A'} {log.location && <span className="text-[10px] text-zinc-600 ml-1">({log.location})</span>}
+                          </td>
                           <td className="py-4 px-4 text-right">
                             <Badge className={
-                              log.severity === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                              log.severity === 'warn' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
+                              log.severity === 'error' || log.severity === 'high' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                              log.severity === 'warn' || log.severity === 'medium' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
                               'bg-blue-500/10 text-blue-500 border-blue-500/20'
                             }>
-                              {log.severity}
+                              {log.severity || 'low'}
                             </Badge>
                           </td>
                         </tr>
@@ -452,19 +571,27 @@ export default function LogsExplorerPage() {
                             <div className="grid grid-cols-2 gap-4">
                               <div className="p-4 rounded-lg bg-white/5 border border-white/5">
                                 <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Event Type</p>
-                                <p className="text-sm font-medium">{log.type}</p>
+                                <p className="text-sm font-medium">{log.event_type}</p>
                               </div>
                               <div className="p-4 rounded-lg bg-white/5 border border-white/5">
                                 <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Severity</p>
-                                <p className="text-sm font-medium capitalize">{log.severity}</p>
+                                <p className="text-sm font-medium capitalize">{log.severity || 'low'}</p>
                               </div>
                               <div className="p-4 rounded-lg bg-white/5 border border-white/5">
                                 <p className="text-xs text-zinc-500 uppercase font-bold mb-1">User</p>
-                                <p className="text-sm font-medium">{log.user}</p>
+                                <p className="text-sm font-medium">{log.user_id || 'N/A'}</p>
                               </div>
                               <div className="p-4 rounded-lg bg-white/5 border border-white/5">
                                 <p className="text-xs text-zinc-500 uppercase font-bold mb-1">IP Address</p>
-                                <p className="text-sm font-medium font-mono">{log.ip}</p>
+                                <p className="text-sm font-medium font-mono">{log.ip || 'N/A'}</p>
+                              </div>
+                              <div className="p-4 rounded-lg bg-white/5 border border-white/5">
+                                <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Location</p>
+                                <p className="text-sm font-medium">{log.location || 'N/A'}</p>
+                              </div>
+                              <div className="p-4 rounded-lg bg-white/5 border border-white/5">
+                                <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Anomaly Score</p>
+                                <p className="text-sm font-medium">{log.anomaly_score?.toFixed(2) || '0.00'}</p>
                               </div>
                             </div>
                             <div className="space-y-2">
@@ -472,18 +599,15 @@ export default function LogsExplorerPage() {
                               <pre className="p-4 rounded-lg bg-black border border-white/5 text-xs text-blue-400 overflow-x-auto">
 {JSON.stringify({
   id: log.id,
-  eventType: log.type,
-  userId: log.user,
+  eventType: log.event_type,
+  userId: log.user_id,
   ip: log.ip,
   location: log.location,
   timestamp: log.timestamp,
   severity: log.severity,
-  resource: "dashboard",
-  metadata: {
-    browser: "Chrome 122.0.0",
-    os: "macOS Sonoma",
-    device: "desktop"
-  }
+  resource: log.resource,
+  anomalyScore: log.anomaly_score,
+  metadata: log.metadata
 }, null, 2)}
                               </pre>
                             </div>

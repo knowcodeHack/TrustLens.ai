@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Zap, Lock, BarChart3, Cloud, Code, ArrowRight, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import LightPillar from "@/components/LightPillar";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -17,23 +18,45 @@ export default function Home() {
       
       <main>
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent -z-10" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-blue-400 mb-8">
-              <Zap className="w-3 h-3" />
-              <span>v1.0 is now live</span>
+        <section className="relative pt-32 pb-20 overflow-hidden min-h-screen">
+          <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
+            <LightPillar
+              topColor="#5227FF"
+              bottomColor="#FF9FFC"
+              intensity={1}
+              rotationSpeed={0.4}
+              glowAmount={0.002}
+              pillarWidth={3}
+              pillarHeight={0.4}
+              noiseIntensity={0.5}
+              pillarRotation={25}
+              interactive={false}
+              mixBlendMode="screen"
+              quality="high"
+            />
+          </div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent z-0" />
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-white mb-8 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all">
+              <Zap className="w-3 h-3 text-yellow-400 animate-pulse" />
+              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">v1.0 is now live</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-zinc-500">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 drop-shadow-2xl" style={{
+              background: 'linear-gradient(to bottom, #ffffff 0%, #e0e0e0 50%, #a0a0a0 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textShadow: '0 0 80px rgba(138, 43, 226, 0.5)'
+            }}>
               Real-time AI Security & <br /> Compliance for SaaS
             </h1>
-            <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10">
+            <p className="text-lg md:text-xl text-zinc-300 max-w-2xl mx-auto mb-10 backdrop-blur-sm drop-shadow-lg font-medium">
               Detect anomalies, automate SOC2 readiness, and model threat behaviors with a single API call. Built for modern engineering teams.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               {session ? (
                 <Link href="/app/dashboard">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 group">
+                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-12 px-8 group shadow-lg shadow-blue-500/50 hover:shadow-blue-500/70 hover:scale-105 transition-all backdrop-blur-sm border border-white/20">
                     <LayoutDashboard className="w-4 h-4 mr-2" />
                     Go to Dashboard
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -41,13 +64,13 @@ export default function Home() {
                 </Link>
               ) : (
                 <Link href="/signup">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8">
+                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-12 px-8 shadow-lg shadow-blue-500/50 hover:shadow-blue-500/70 hover:scale-105 transition-all backdrop-blur-sm border border-white/20 font-semibold">
                     Get Started for Free
                   </Button>
                 </Link>
               )}
               <Link href="/docs">
-                <Button size="lg" variant="outline" className="border-white/10 hover:bg-white/5 h-12 px-8">
+                <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10 h-12 px-8 hover:scale-105 transition-all shadow-lg hover:shadow-white/20 font-semibold">
                   View Documentation
                 </Button>
               </Link>
